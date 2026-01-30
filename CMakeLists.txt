@@ -126,14 +126,30 @@ endif()
 # Include directories
 target_include_directories(jc_reborn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Installation
+install(TARGETS jc_reborn DESTINATION bin)
+
+# Print build configuration
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
+message(STATUS "C Flags: ${CMAKE_C_FLAGS}")
+message(STATUS "Platform sources: ${PLATFORM_SOURCES}")
 
 # SDL 1.2 rendering variant for all platforms (optional)
 if(BUILD_SDL12)
-    add_executable(jc_reborn_sdl12 ${COMMON_SOURCES} platform_sdl12.c)
+    add_executable(jc_reborn_sdl12
+        ${COMMON_SOURCES}
+        platform_sdl12.c
+    )
+
     target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
 
-    # Explicit path to Buildroot's sdl-config
-    set(SDL_CONFIG "$ENV{STAGING_DIR}/usr/bin/sdl-config")
+    # Prefer Buildroot's sdl-config if STAGING_DIR is set
+    if(DEFINED ENV{STAGING_DIR})
+        set(SDL_CONFIG "$ENV{STAGING_DIR}/usr/bin/sdl-config")
+    else()
+        set(SDL_CONFIG "sdl-config")
+    endif()
 
     execute_process(
         COMMAND ${SDL_CONFIG} --cflags
@@ -150,12 +166,3 @@ if(BUILD_SDL12)
     target_compile_options(jc_reborn_sdl12 PRIVATE ${SDL_CFLAGS})
     target_link_libraries(jc_reborn_sdl12 ${SDL_LIBS})
 endif()
-
-# Installation
-install(TARGETS jc_reborn DESTINATION bin)
-
-# Print build configuration
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
-message(STATUS "C Flags: ${CMAKE_C_FLAGS}")
-message(STATUS "Platform sources: ${PLATFORM_SOURCES}")
