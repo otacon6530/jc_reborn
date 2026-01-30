@@ -132,15 +132,17 @@ if(BUILD_SDL12)
     add_executable(jc_reborn_sdl12 ${COMMON_SOURCES} platform_sdl12.c)
     target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
 
-    # Always use sdl-config in Buildroot (cross or native)
+    # Explicit path to Buildroot's sdl-config
+    set(SDL_CONFIG "$ENV{STAGING_DIR}/usr/bin/sdl-config")
+
     execute_process(
-        COMMAND sdl-config --cflags
+        COMMAND ${SDL_CONFIG} --cflags
         OUTPUT_VARIABLE SDL_CFLAGS
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
     execute_process(
-        COMMAND sdl-config --libs
+        COMMAND ${SDL_CONFIG} --libs
         OUTPUT_VARIABLE SDL_LIBS
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
