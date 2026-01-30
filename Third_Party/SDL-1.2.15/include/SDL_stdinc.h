@@ -153,6 +153,7 @@ SDL_COMPILE_TIME_ASSERT(enum, sizeof(SDL_DUMMY_ENUM) == sizeof(int));
 /*@}*/
 
 #include "begin_code.h"
+#include <stddef.h> // for size_t
 /* Set up for C function definitions, even when using C++ */
 #ifdef __cplusplus
 extern "C" {
