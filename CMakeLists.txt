@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(jc_reborn C)
+if(DEFINED ENV{STAGING_DIR})
+    set(STAGING_DIR $ENV{STAGING_DIR})
+endif()
+
 
 # Option to build SDL 1.2 variant
 option(BUILD_SDL12 "Build the SDL 1.2 rendering variant" OFF)
