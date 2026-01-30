@@ -128,7 +128,7 @@ target_include_directories(jc_reborn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 # SDL 1.2 rendering variant for all platforms
 add_executable(jc_reborn_sdl12 ${COMMON_SOURCES} platform_sdl12.c)
 target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
-target_include_directories(jc_reborn_sdl12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(jc_reborn_sdl12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Third_Party/SDL-1.2.15/include)
 if(WIN32)
     target_link_libraries(jc_reborn_sdl12
         pthread

@@ -42,8 +42,8 @@ void islandInit(struct TTtmThread *ttmThread)
         grLoadScreen("NIGHT.SCR");
     }
     else {
-        char scrName[12];
-        sprintf(scrName, "OCEAN0%d.SCR", rand() % 3);
+        char scrName[16];
+        snprintf(scrName, sizeof(scrName), "OCEAN0%d.SCR", rand() % 3);
         grLoadScreen(scrName);
     }
 
