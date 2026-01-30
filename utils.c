@@ -26,7 +26,11 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
+#ifdef _WIN32
+// Windows does not have sys/time.h; use time.h or implement needed functions
+#else
 #include <sys/time.h>
+#endif
 
 #include "mytypes.h"
 
@@ -192,41 +196,35 @@ void hexdump(uint8 *data, uint32 len)
 }
 
 
+
 int getDayOfYear()
 {
-    struct timeval tv;
     struct tm *localTime;
     time_t t;
-
-    gettimeofday(&tv, NULL);
-    t = (time_t)tv.tv_sec;
+    t = time(NULL);
     localTime = localtime(&t);
     return localTime->tm_yday;
 }
 
 
+
 int getHour()
 {
-    struct timeval tv;
     struct tm *localTime;
     time_t t;
-
-    gettimeofday(&tv, NULL);
-    t = (time_t)tv.tv_sec;
+    t = time(NULL);
     localTime = localtime(&t);
     return localTime->tm_hour;
 }
 
 
+
 char *getMonthAndDay()
 {
-    struct timeval tv;
     struct tm *localTime;
     static char result[5];
     time_t t;
-
-    gettimeofday(&tv, NULL);
-    t = (time_t)tv.tv_sec;
+    t = time(NULL);
     localTime = localtime(&t);
     strftime(result, 5, "%m%d", localTime);
     return result;

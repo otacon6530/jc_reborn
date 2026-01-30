@@ -30,7 +30,7 @@
 #include "utils.h"
 
 
-struct TIslandState islandState = { 0, 0, 0, 0, 0, 0, 0, {0,0,0,0,0}, {0,0,0,0,0} };
+struct TIslandState islandState = { 0, 0, 0, 0, 0, 0, {0} };
 
 
 void islandInit(struct TTtmThread *ttmThread)

@@ -6,7 +6,11 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Compiler flags from original Makefile
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wpedantic")
+if (MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wpedantic")
+endif()
 
 # Source files (common to all platforms)
 set(COMMON_SOURCES
@@ -29,31 +33,35 @@ set(COMMON_SOURCES
 )
 
 # Platform detection and specific sources
+set(PLATFORM_DEFINE "")
+
 if(EMSCRIPTEN)
     message(STATUS "Building for Web (Emscripten)")
     set(PLATFORM_SOURCES platform_web.c)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sASYNCIFY -sALLOW_MEMORY_GROWTH -sSTANDALONE_WASM=0 -sEXIT_RUNTIME")
     set(CMAKE_EXECUTABLE_SUFFIX ".js")
-    add_definitions(-DPLATFORM_WEB)
+    set(PLATFORM_DEFINE PLATFORM_WEB)
 elseif(WIN32)
     message(STATUS "Building for Windows")
     set(PLATFORM_SOURCES platform_windows.c)
-    add_definitions(-DPLATFORM_WINDOWS)
+    set(PLATFORM_DEFINE PLATFORM_WINDOWS)
     # Static linking for MinGW cross-compilation
     if(CMAKE_CROSSCOMPILING)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
     endif()
-    # Windows-specific libraries will be added below
+    # Add SDL as a subdirectory and include its headers
+    add_subdirectory(Third_Party/SDL-1.2.15)
+    include_directories(Third_Party/SDL-1.2.15/include)
 elseif(APPLE)
     message(STATUS "Building for macOS")
     set(PLATFORM_SOURCES platform_macos.m)
-    add_definitions(-DPLATFORM_MACOS)
+    set(PLATFORM_DEFINE PLATFORM_MACOS)
     # macOS-specific frameworks will be added below
 elseif(UNIX)
     message(STATUS "Building for Linux")
     set(PLATFORM_SOURCES platform_linux.c)
-    add_definitions(-DPLATFORM_LINUX)
+    set(PLATFORM_DEFINE PLATFORM_LINUX)
     # Linux-specific libraries will be added below
 else()
     message(FATAL_ERROR "Unsupported platform")
@@ -61,6 +69,10 @@ endif()
 
 # Create executable
 add_executable(jc_reborn ${COMMON_SOURCES} ${PLATFORM_SOURCES})
+
+if(PLATFORM_DEFINE)
+    target_compile_definitions(jc_reborn PRIVATE ${PLATFORM_DEFINE})
+endif()
 
 # Set Objective-C compilation for macOS platform file
 if(APPLE)
@@ -72,8 +84,9 @@ if(EMSCRIPTEN)
     # No additional libraries needed for Emscripten
     # Everything is handled through JavaScript
 elseif(WIN32)
-    # Windows libraries
+    # Windows libraries and SDL
     target_link_libraries(jc_reborn
+        SDLmain SDL
         gdi32
         user32
         winmm
@@ -107,6 +120,19 @@ endif()
 
 # Include directories
 target_include_directories(jc_reborn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# SDL 1.2 rendering variant for Windows
+if(WIN32)
+    add_executable(jc_reborn_sdl12 ${COMMON_SOURCES} platform_sdl12.c)
+    target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
+    target_include_directories(jc_reborn_sdl12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(jc_reborn_sdl12
+        SDLmain SDL
+        gdi32
+        user32
+        winmm
+    )
+endif()
 
 # Installation
 install(TARGETS jc_reborn DESTINATION bin)

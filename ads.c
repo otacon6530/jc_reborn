@@ -23,7 +23,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef _WIN32
+// Windows does not have unistd.h; provide replacements if needed
+#else
 #include <unistd.h>
+#endif
 #include "platform.h"
 
 #include "mytypes.h"

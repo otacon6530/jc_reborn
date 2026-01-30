@@ -25,7 +25,11 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+// Windows does not have unistd.h; provide replacements if needed
+#else
 #include <unistd.h>
+#endif
 
 #include "mytypes.h"
 #include "resource.h"
