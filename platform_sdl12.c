@@ -485,7 +485,7 @@ int platformOpenAudio(PlatformAudioSpec* spec) {
 
     SDL_AudioSpec desired;
     SDL_AudioSpec obtained;
-    SDL_memset(&desired, 0, sizeof(SDL_AudioSpec));
+    memset(&desired, 0, sizeof(SDL_AudioSpec));
 
     desired.freq = spec->freq > 0 ? spec->freq : 11025;
     desired.channels = spec->channels > 0 ? spec->channels : 1;
