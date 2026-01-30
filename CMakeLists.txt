@@ -4,7 +4,8 @@ if(DEFINED ENV{STAGING_DIR})
     set(STAGING_DIR $ENV{STAGING_DIR})
 endif()
 option(SDL_CONFIG_PATH "Path to sdl-config for SDL1.2" "")
-
+set(SDL1_INCLUDE_DIR "" CACHE PATH "Path to SDL1.2 include directory")
+set(SDL1_LIB_DIR "" CACHE PATH "Path to SDL1.2 library directory")
 
 
 # Option to build SDL 1.2 variant
@@ -141,7 +142,6 @@ message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "C Flags: ${CMAKE_C_FLAGS}")
 message(STATUS "Platform sources: ${PLATFORM_SOURCES}")
 
-# SDL 1.2 rendering variant for all platforms (optional)
 if(BUILD_SDL12)
     add_executable(jc_reborn_sdl12
         ${COMMON_SOURCES}
@@ -150,27 +150,17 @@ if(BUILD_SDL12)
 
     target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
 
-    # If user provided a path, use it; otherwise fallback
-    if(SDL_CONFIG_PATH)
-        set(SDL_CONFIG "${SDL_CONFIG_PATH}")
-    else()
-        set(SDL_CONFIG "sdl-config")
+    # Use explicit include/lib paths if provided
+    if(SDL1_INCLUDE_DIR)
+        target_include_directories(jc_reborn_sdl12 PRIVATE ${SDL1_INCLUDE_DIR})
     endif()
 
-    execute_process(
-        COMMAND ${SDL_CONFIG} --cflags
-        OUTPUT_VARIABLE SDL_CFLAGS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    if(SDL1_LIB_DIR)
+        target_link_directories(jc_reborn_sdl12 PRIVATE ${SDL1_LIB_DIR})
+    endif()
 
-    execute_process(
-        COMMAND ${SDL_CONFIG} --libs
-        OUTPUT_VARIABLE SDL_LIBS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    target_compile_options(jc_reborn_sdl12 PRIVATE ${SDL_CFLAGS})
-    target_link_libraries(jc_reborn_sdl12 ${SDL_LIBS})
+    # Always link against SDL1.2
+    target_link_libraries(jc_reborn_sdl12 SDL)
 
     install(TARGETS jc_reborn_sdl12 DESTINATION bin)
 endif()
