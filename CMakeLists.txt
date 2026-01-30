@@ -86,6 +86,7 @@ if(EMSCRIPTEN)
 elseif(WIN32)
     # Windows libraries and SDL
     target_link_libraries(jc_reborn
+        pthread
         SDLmain SDL
         gdi32
         user32
@@ -96,6 +97,7 @@ elseif(APPLE)
     find_library(COCOA_FRAMEWORK Cocoa REQUIRED)
     find_library(AUDIO_TOOLBOX AudioToolbox REQUIRED)
     target_link_libraries(jc_reborn
+        pthread
         ${COCOA_FRAMEWORK}
         ${AUDIO_TOOLBOX}
     )
@@ -111,6 +113,7 @@ elseif(UNIX)
     )
     
     target_link_libraries(jc_reborn
+        pthread
         ${X11_LIBRARIES}
         ${ALSA_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
@@ -127,6 +130,7 @@ if(WIN32)
     target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
     target_include_directories(jc_reborn_sdl12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(jc_reborn_sdl12
+        pthread
         SDLmain SDL
         gdi32
         user32
