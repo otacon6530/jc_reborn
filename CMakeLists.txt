@@ -129,31 +129,20 @@ target_include_directories(jc_reborn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # SDL 1.2 rendering variant for all platforms (optional)
 if(BUILD_SDL12)
+    execute_process(
+        COMMAND sdl-config --cflags
+        OUTPUT_VARIABLE SDL_CFLAGS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    execute_process(
+        COMMAND sdl-config --libs
+        OUTPUT_VARIABLE SDL_LIBS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
     add_executable(jc_reborn_sdl12 ${COMMON_SOURCES} platform_sdl12.c)
     target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
-    target_include_directories(jc_reborn_sdl12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SDL_INCLUDE_DIR})
-    if(WIN32)
-        target_link_libraries(jc_reborn_sdl12
-            ${SDL_LIBRARY}
-            gdi32
-            user32
-            winmm
-        )
-    elseif(UNIX AND NOT APPLE)
-        target_link_libraries(jc_reborn_sdl12
-            pthread
-            ${SDL_LIBRARY}
-            m
-        )
-    elseif(APPLE)
-        target_link_libraries(jc_reborn_sdl12
-            ${SDL_LIBRARY}
-            "-framework Cocoa"
-            "-framework AudioToolbox"
-            "-framework Carbon"
-            "-framework IOKit"
-        )
-    endif()
+    target_compile_options(jc_reborn_sdl12 PRIVATE ${SDL_CFLAGS})
+    target_link_libraries(jc_reborn_sdl12 ${SDL_LIBS})
 endif()
 
 # Installation
