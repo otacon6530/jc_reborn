@@ -3,6 +3,8 @@ project(jc_reborn C)
 if(DEFINED ENV{STAGING_DIR})
     set(STAGING_DIR $ENV{STAGING_DIR})
 endif()
+option(SDL_CONFIG_PATH "Path to sdl-config for SDL1.2" "")
+
 
 
 # Option to build SDL 1.2 variant
@@ -148,9 +150,9 @@ if(BUILD_SDL12)
 
     target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
 
-    # Prefer Buildroot's sdl-config if STAGING_DIR is set
-    if(DEFINED ENV{STAGING_DIR})
-        set(SDL_CONFIG "$ENV{STAGING_DIR}/usr/bin/sdl-config")
+    # If user provided a path, use it; otherwise fallback
+    if(SDL_CONFIG_PATH)
+        set(SDL_CONFIG "${SDL_CONFIG_PATH}")
     else()
         set(SDL_CONFIG "sdl-config")
     endif()
@@ -169,4 +171,6 @@ if(BUILD_SDL12)
 
     target_compile_options(jc_reborn_sdl12 PRIVATE ${SDL_CFLAGS})
     target_link_libraries(jc_reborn_sdl12 ${SDL_LIBS})
+
+    install(TARGETS jc_reborn_sdl12 DESTINATION bin)
 endif()
