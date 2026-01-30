@@ -124,17 +124,32 @@ endif()
 # Include directories
 target_include_directories(jc_reborn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-# SDL 1.2 rendering variant for Windows
+
+# SDL 1.2 rendering variant for all platforms
+add_executable(jc_reborn_sdl12 ${COMMON_SOURCES} platform_sdl12.c)
+target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
+target_include_directories(jc_reborn_sdl12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 if(WIN32)
-    add_executable(jc_reborn_sdl12 ${COMMON_SOURCES} platform_sdl12.c)
-    target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
-    target_include_directories(jc_reborn_sdl12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(jc_reborn_sdl12
         pthread
         SDLmain SDL
         gdi32
         user32
         winmm
+    )
+elseif(UNIX AND NOT APPLE)
+    target_link_libraries(jc_reborn_sdl12
+        pthread
+        SDLmain SDL
+        m
+    )
+elseif(APPLE)
+    target_link_libraries(jc_reborn_sdl12
+        SDLmain SDL
+        "-framework Cocoa"
+        "-framework AudioToolbox"
+        "-framework Carbon"
+        "-framework IOKit"
     )
 endif()
 
