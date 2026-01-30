@@ -129,20 +129,30 @@ target_include_directories(jc_reborn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # SDL 1.2 rendering variant for all platforms (optional)
 if(BUILD_SDL12)
-    execute_process(
-        COMMAND sdl-config --cflags
-        OUTPUT_VARIABLE SDL_CFLAGS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    execute_process(
-        COMMAND sdl-config --libs
-        OUTPUT_VARIABLE SDL_LIBS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
     add_executable(jc_reborn_sdl12 ${COMMON_SOURCES} platform_sdl12.c)
     target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
-    target_compile_options(jc_reborn_sdl12 PRIVATE ${SDL_CFLAGS})
-    target_link_libraries(jc_reborn_sdl12 ${SDL_LIBS})
+    if(CMAKE_CROSSCOMPILING)
+        # Use Buildroot's staging directory for SDL includes/libs
+        if(DEFINED ENV{STAGING_DIR})
+            target_include_directories(jc_reborn_sdl12 PRIVATE $ENV{STAGING_DIR}/usr/include/SDL)
+        else()
+            message(FATAL_ERROR "STAGING_DIR environment variable not set for cross-compiling.")
+        endif()
+        target_link_libraries(jc_reborn_sdl12 SDL)
+    else()
+        execute_process(
+            COMMAND sdl-config --cflags
+            OUTPUT_VARIABLE SDL_CFLAGS
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        execute_process(
+            COMMAND sdl-config --libs
+            OUTPUT_VARIABLE SDL_LIBS
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        target_compile_options(jc_reborn_sdl12 PRIVATE ${SDL_CFLAGS})
+        target_link_libraries(jc_reborn_sdl12 ${SDL_LIBS})
+    endif()
 endif()
 
 # Installation
