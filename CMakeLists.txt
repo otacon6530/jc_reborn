@@ -86,7 +86,6 @@ if(EMSCRIPTEN)
 elseif(WIN32)
     # Windows libraries and SDL
     target_link_libraries(jc_reborn
-        pthread
         SDLmain SDL
         gdi32
         user32
@@ -131,7 +130,6 @@ target_compile_definitions(jc_reborn_sdl12 PRIVATE PLATFORM_SDL12)
 target_include_directories(jc_reborn_sdl12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Third_Party/SDL-1.2.15/include)
 if(WIN32)
     target_link_libraries(jc_reborn_sdl12
-        pthread
         SDLmain SDL
         gdi32
         user32
