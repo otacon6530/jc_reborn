@@ -17,15 +17,6 @@ It is written in C and has been refactored to use platform-native APIs instead o
 For the screen saver to work, you'll need the three data files from the original
 software: `RESOURCE.MAP`, `RESOURCE.001` and `SCRANTIC.SCR` and save it under a `data` folder in the root directory.
 
-Use `extract_sound` to dump the audio files from `SCRANTIC.SCR` file.
-
-> cd tools
-
-> make -f Makefile.sound
-
-> ./extract_sound
-
-
 ## Building
 
 ### Prerequisites
