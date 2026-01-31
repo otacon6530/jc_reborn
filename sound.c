@@ -31,37 +31,19 @@
 
 
 #define NUM_OF_SOUNDS  25
-#define NUM_SCRANTIC_SOUNDS 24
-
-static const int scrantic_offsets[NUM_SCRANTIC_SOUNDS] = {
-    0x1DC00, 0x20800, 0x20E00,
-    0x22C00, 0x24000, 0x24C00,
-    0x28A00, 0x2C600, 0x2D000,
-    0x2DE00, 0x34400, 0x32E00,
-    0x39C00, 0x43400, 0x37200,
-    0x37E00, 0x45A00, 0x3AE00,
-    0x3E600, 0x3F400, 0x41200,
-    0x42600, 0x42C00, 0x43400
-};
-
-
-
 
 struct TSound {
     uint32  length;
     uint8   *data;
 };
 
-
 int soundDisabled = 0;
-
 
 static struct TSound sounds[NUM_OF_SOUNDS];
 static struct TSound *currentSound;
 
 static uint8  *currentPtr;
 static uint32 currentRemaining;
-
 
 static void soundCallback(void *userdata, uint8 *stream, int rqdLen)
 { 
@@ -78,74 +60,100 @@ static void soundCallback(void *userdata, uint8 *stream, int rqdLen)
     }
 }
 
-
 void soundInit(void)
 {
 
-    printf("soundInit: called");
+    debugMsg("soundInit: called");
     if (soundDisabled) {
-        printf("soundInit: soundDisabled is set, skipping init");
+        debugMsg("soundInit: soundDisabled is set, skipping init");
         return;
     }
 
 
-    printf("soundInit: calling platformInitAudio");
+    debugMsg("soundInit: calling platformInitAudio");
     if (platformInitAudio() < 0) {
-        printf("Platform init audio error: %s", platformGetError());
+        debugMsg("Platform init audio error: %s", platformGetError());
         soundDisabled = 1;
         return;
     }
 
     PlatformAudioSpec audioSpec;
 
-
-    // Load all sounds from SCRANTIC.SCR
+    // Dynamically find and load all RIFF/WAVE sounds from SCRANTIC.SCR
     char scrantic_path[256];
     snprintf(scrantic_path, sizeof(scrantic_path), "data/SCRANTIC.SCR");
 
-    printf("soundInit: opening SCRANTIC.SCR at %s", scrantic_path);
+    debugMsg("soundInit: opening SCRANTIC.SCR at %s", scrantic_path);
     FILE *f = fopen(scrantic_path, "rb");
     if (!f) {
-        printf("Could not open SCRANTIC.SCR for reading");
+        debugMsg("Could not open SCRANTIC.SCR for reading");
         soundDisabled = 1;
         return;
     }
 
-    for (int i = 0; i < NUM_SCRANTIC_SOUNDS; i++) {
-        debugMsg("soundInit: loading sound %d from offset 0x%X", i+1, scrantic_offsets[i]);
-        if (scrantic_offsets[i] == -1) {
-            sounds[i+1].data = NULL;
-            sounds[i+1].length = 0;
-            printf("soundInit: sound %d offset is -1, skipping", i+1);
-            continue;
-        }
-        fseek(f, scrantic_offsets[i], SEEK_SET);
-        uint16 size = readUint16(f);
-        int wav_size = size + 8;
-            printf("soundInit: sound %d size = %d (wav_size = %d)", i+1, size, wav_size);
-        fseek(f, scrantic_offsets[i], SEEK_SET);
-        uint8 *buffer = (uint8*)malloc(wav_size);
-        if (fread(buffer, 1, wav_size, f) != wav_size) {
-            free(buffer);
-            sounds[i+1].data = NULL;
-            sounds[i+1].length = 0;
-            printf("Failed to read sound %d from SCRANTIC.SCR", i+1);
-            continue;
-        }
-        sounds[i+1].data = buffer;
-        sounds[i+1].length = wav_size;
-        printf("soundInit: loaded sound %d successfully", i+1);
+    // Read entire file into memory
+    fseek(f, 0, SEEK_END);
+    long filesize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    uint8_t *filedata = (uint8_t*)malloc(filesize);
+    if (!filedata) {
+        fclose(f);
+        debugMsg("Failed to allocate memory for SCRANTIC.SCR");
+        soundDisabled = 1;
+        return;
     }
+    fread(filedata, 1, filesize, f);
     fclose(f);
 
+    // Find all RIFF/WAVE headers
+    int found = 1; // Start at 1 so sounds[1] is first
+    for (long i = 0; i < filesize - 12 && found < NUM_OF_SOUNDS; i++) {
+        if (memcmp(filedata + i, "RIFF", 4) == 0 && memcmp(filedata + i + 8, "WAVE", 4) == 0) {
+            // Get chunk size (little endian)
+            uint32_t chunk_size = filedata[i+4] | (filedata[i+5]<<8) | (filedata[i+6]<<16) | (filedata[i+7]<<24);
+            uint32_t wav_size = chunk_size + 8; // 'RIFF' + size(4) + chunk_size
+            if (i + wav_size > filesize) wav_size = filesize - i;
+            uint8_t *buffer = (uint8_t*)malloc(wav_size);
+            if (buffer) {
+                memcpy(buffer, filedata + i, wav_size);
+                sounds[found].data = buffer;
+                sounds[found].length = wav_size;
+                debugMsg("soundInit: loaded sound %d at offset 0x%lX, size %u", found, i, wav_size);
+                found++;
+            }
+            i += wav_size - 1; // Skip to end of this chunk
+        }
+    }
+    free(filedata);
+
+    // Zero out any unused slots (including sounds[0])
+    for (int i = 0; i < NUM_OF_SOUNDS; i++) {
+        if (sounds[i].data == NULL) {
+            sounds[i].data = NULL;
+            sounds[i].length = 0;
+        }
+    }
+
+
+    // Set all required fields for PlatformAudioSpec
+    audioSpec.freq = 22050;      // Standard sample rate for classic WAVs
+    audioSpec.format = 1;        // 1 = AUDIO_U8 (unsigned 8-bit PCM), adjust if needed
+    audioSpec.channels = 1;      // Mono, adjust if your WAVs are stereo
+    audioSpec.samples = 1024;    // Buffer size
     audioSpec.callback = soundCallback;
     audioSpec.userdata = NULL;
-    audioSpec.samples  = 1024;
 
 
-    printf("soundInit: calling platformOpenAudio");
-    if (platformOpenAudio(&audioSpec) < 0) {
-        printf("platformOpenAudio() error: %s", platformGetError());
+
+    debugMsg("soundInit: audioSpec.freq = %d", audioSpec.freq);
+    debugMsg("soundInit: audioSpec.format = %u", (unsigned)audioSpec.format);
+    debugMsg("soundInit: audioSpec.channels = %u", (unsigned)audioSpec.channels);
+    debugMsg("soundInit: audioSpec.samples = %u", (unsigned)audioSpec.samples);
+    debugMsg("soundInit: calling platformOpenAudio");
+    int open_result = platformOpenAudio(&audioSpec);
+    if (open_result < 0) {
+        debugMsg("platformOpenAudio() error: %s", platformGetError());
+        debugMsg("soundInit: platformOpenAudio returned %d", open_result);
         soundDisabled = 1;
         return;
     }
@@ -170,19 +178,19 @@ void soundEnd()
 
 void soundPlay(int nb)
 {
-    printf("soundPlay: called with nb=%d", nb);
+    debugMsg("soundPlay: called with nb=%d", nb);
     if (soundDisabled) {
-        printf("soundPlay: soundDisabled is set, skipping playback");
+        debugMsg("soundPlay: soundDisabled is set, skipping playback");
         return;
     }
 
     if (nb < 0 || NUM_OF_SOUNDS <= nb) {
-        printf("soundPlay: wrong sound sample index #%d", nb);
+        debugMsg("soundPlay: wrong sound sample index #%d", nb);
         return;
     }
 
     if (sounds[nb].length) {
-        printf("soundPlay: playing sound #%d, length=%u", nb, sounds[nb].length);
+        debugMsg("soundPlay: playing sound #%d, length=%u", nb, sounds[nb].length);
         platformLockAudio();
         currentSound     = &sounds[nb];
         currentPtr       = currentSound->data;
@@ -190,7 +198,7 @@ void soundPlay(int nb)
         platformUnlockAudio();
     }
     else {
-        printf("soundPlay: Non-existent sound sample #%d", nb);
+        debugMsg("soundPlay: Non-existent sound sample #%d", nb);
     }
 }
 
